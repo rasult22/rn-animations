@@ -1,10 +1,11 @@
-import CircularSlider from '@/components/circular-slider';
+import Confetti from '@/components/confetti/confetti';
 import { StyleSheet, View } from 'react-native';
 
 export default function HomeScreen() {
   return (
     <View style={{ flex: 1 }}>
-      <CircularSlider />
+      {/* <CircularSlider /> */}
+      <Confetti />
     </View>
   );
 }
