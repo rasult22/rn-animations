@@ -1,19 +1,25 @@
 import { useQuery } from "@tanstack/react-query";
-import { ActivityIndicator, Dimensions, View } from "react-native";
-import Animated, { interpolate, SharedValue, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from "react-native-reanimated";
+import { ActivityIndicator, Dimensions, StyleSheet, View } from "react-native";
+import Animated, {
+  interpolate,
+  SharedValue,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+} from "react-native-reanimated";
 
 const uri = `https://api.pexels.com/v1/search?query=mobilewallpaper&orientation=portrait`;
-const {width} = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 const _imageWidth = width * 0.7;
 const _imageHeight = _imageWidth * 1.76;
-const _spacing = 12
+const _spacing = 12;
 
 type SearchPayload = {
   total_results: number;
   page: number;
   per_page: number;
   photos: Photo[];
-}
+};
 
 type Photo = {
   id: number;
@@ -33,13 +39,40 @@ type Photo = {
     portrait: string;
     landscape: string;
     tiny: string;
-  },
+  };
   liked: boolean;
   alt: string;
+};
+
+function BackdropPhoto({
+  photo,
+  index,
+  scrollX,
+}: {
+  photo: Photo;
+  index: number;
+  scrollX: SharedValue<number>;
+}) {
+  const stylez = useAnimatedStyle(() => {
+    return {
+      opacity: interpolate(
+        scrollX.value,
+        [index - 1, index, index + 1],
+        [0, 1, 0]
+      ),
+    };
+  });
+  return (
+    <Animated.Image
+      blurRadius={30}
+      source={{ uri: photo.src.large }}
+      style={[StyleSheet.absoluteFillObject, stylez]}
+    />
+  );
 }
 
 export default function WallPaperCarousel() {
-  const {data, isLoading} = useQuery<SearchPayload>({
+  const { data, isLoading } = useQuery<SearchPayload>({
     queryKey: ["wallpaper"],
     queryFn: async () => {
       const res = await fetch(uri, {
@@ -54,27 +87,38 @@ export default function WallPaperCarousel() {
   });
 
   const scrollX = useSharedValue(0);
-  const onScroll = useAnimatedScrollHandler(e => {
+  const onScroll = useAnimatedScrollHandler((e) => {
     scrollX.value = e.contentOffset.x / (_imageWidth + _spacing);
-  })
+  });
 
   if (isLoading || !data) {
-    return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <ActivityIndicator  size='large'/>
-    </View>
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
   }
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <View style={StyleSheet.absoluteFillObject}>
+        {data.photos.map((item, index) => (
+          <BackdropPhoto photo={item} index={index} scrollX={scrollX} />
+        ))}
+      </View>
       <Animated.FlatList
+        showsHorizontalScrollIndicator={false}
         horizontal={true}
-        contentContainerStyle={{ gap: _spacing, paddingHorizontal: (width - _imageWidth) /2 }}
+        contentContainerStyle={{
+          gap: _spacing,
+          paddingHorizontal: (width - _imageWidth) / 2,
+        }}
         snapToInterval={_imageWidth + _spacing}
-        decelerationRate={'fast'}
+        decelerationRate={"fast"}
         style={{ flexGrow: 0 }}
-        keyExtractor={(item) => item.id.toString()} 
+        keyExtractor={(item) => item.id.toString()}
         data={data.photos}
-        renderItem={({item, index}) => {
-          return <Photo scrollX={scrollX} item={item} index={index}/>
+        renderItem={({ item, index }) => {
+          return <Photo scrollX={scrollX} item={item} index={index} />;
         }}
         onScroll={onScroll}
         scrollEventThrottle={1000 / 60}
@@ -82,27 +126,49 @@ export default function WallPaperCarousel() {
     </View>
   );
 }
-function Photo({item, index, scrollX}: {item: Photo, index: number, scrollX: SharedValue<number>}) {
-
+function Photo({
+  item,
+  index,
+  scrollX,
+}: {
+  item: Photo;
+  index: number;
+  scrollX: SharedValue<number>;
+}) {
   const stylez = useAnimatedStyle(() => {
     return {
       transform: [
         {
-          scale: interpolate(scrollX.value, [index - 1, index, index + 1], [1.4, 1, 1.4])
+          scale: interpolate(
+            scrollX.value,
+            [index - 1, index, index + 1],
+            [1.4, 1, 1.4]
+          ),
         },
         {
-          rotate: `${interpolate(scrollX.value, [index - 1, index, index + 1], [15, 0, -15])}deg`
-        }
-      ]
-    }
-  })
+          rotate: `${interpolate(
+            scrollX.value,
+            [index - 1, index, index + 1],
+            [15, 0, -15]
+          )}deg`,
+        },
+      ],
+    };
+  });
 
-  return <View style={{
-    width: _imageWidth,
-    height: _imageHeight,
-    borderRadius: 16,
-    overflow: 'hidden'
-  }} >
-    <Animated.Image  source={{uri: item.src.large}} style={[{ flex: 1 }, stylez]}/>
+  return (
+    <View
+      style={{
+        width: _imageWidth,
+        height: _imageHeight,
+        borderRadius: 16,
+        overflow: "hidden",
+      }}
+    >
+      <Animated.Image
+        source={{ uri: item.src.large }}
+        style={[{ flex: 1 }, stylez]}
+      />
     </View>
+  );
 }
