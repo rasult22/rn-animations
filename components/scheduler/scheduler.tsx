@@ -1,6 +1,7 @@
-import { Plus } from 'lucide-react-native';
+import { Plus, X } from 'lucide-react-native';
 import { useState } from "react";
 import { Pressable, Switch, Text, View } from "react-native";
+import Animated, { FadeInDown, FadeOut, LinearTransition } from 'react-native-reanimated';
 const weekDays = [
   "Monday",
   "Tuesday",
@@ -15,15 +16,65 @@ const _spacing = 10;
 const _color = '#ececec';
 const _borderRadius = 16;
 const _startHour = 8;
+const _damping = 40;
+const _entering = FadeInDown.springify().damping(_damping)
+const _exiting = FadeOut.springify().damping(_damping)
+const _layout = LinearTransition.springify().damping(_damping)
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
+
+function HourBlock({block}: {block: number}) {
+  return (
+    <View style={{
+      borderWidth: 1,
+      borderColor: _color,
+      borderRadius: _borderRadius - _spacing,
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: _spacing / 4,
+    }}>
+      <Text>
+        {block > 9 ? block : `0${block}`}:00{" "}
+        {block > 11 && block < 24? 'PM' : 'AM'}
+      </Text>
+    </View>
+  )
+}
 
 function DayBlock() {
   const [hours, setHours] = useState([_startHour]);
   return (
-    <View>
-      <Text>
-        day block
-      </Text>
-      <Pressable
+    <Animated.View entering={_entering} exiting={_exiting} layout={_layout} style={{
+      gap: _spacing,
+    }}>
+      {
+        hours.map((hour) => (
+          <Animated.View entering={_entering} exiting={_exiting} layout={_layout} key={`hour-${hour}`} style={{ flexDirection: 'row', gap: _spacing, alignItems: 'center' }}>
+            <Text>From: </Text>
+            <HourBlock block={hour} />
+            <Text>To: </Text>
+            <HourBlock block={hour + 1} />
+            <AnimatedPressable
+              onPress={() => {
+                setHours((prev) => [...prev.filter((k) => k !== hour)])
+              }}
+            >
+              <View style={{
+                backgroundColor: _color,
+                height: 24,
+                aspectRatio: 1,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: _borderRadius - _spacing
+              }}>
+                <X size={14} color="#555" />
+              </View>
+            </AnimatedPressable>
+          </Animated.View>
+        ))
+      }
+      <AnimatedPressable
+      layout={_layout}
        onPress={() => {
         if (hours.length === 0) {
           setHours([_startHour])
@@ -45,15 +96,15 @@ function DayBlock() {
           <Plus size={18} color="#333" />
           <Text style={{ fontSize: 14, color: '#333' }}>Add more</Text>
         </View>
-      </Pressable>
-    </View>
+      </AnimatedPressable>
+    </Animated.View>
   )
 }
 
 function Day({day} : {day: typeof weekDays[number]}) {
   const [isOn, setIsOn] = useState(false);
   return (
-    <View style={{
+    <Animated.View layout={_layout} style={{
       borderWidth: 1,
       borderColor: _color,
       borderRadius: _borderRadius,
@@ -68,7 +119,7 @@ function Day({day} : {day: typeof weekDays[number]}) {
         }} />
       </View>
       {isOn && <DayBlock />}
-    </View>
+    </Animated.View>
   )
 }
 
