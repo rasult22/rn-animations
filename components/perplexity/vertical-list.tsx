@@ -38,6 +38,7 @@ function AnimatedCard({ item, index, scrollY }: { item: PerplexityItem, index: n
         }}
         style={{
           flex: 1,
+          borderRadius: 12,
           height: _itemSize * 0.4,
         }}
       />
